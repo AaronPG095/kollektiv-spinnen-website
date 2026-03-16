@@ -279,22 +279,27 @@ const Tickets = () => {
     return type === 'early' ? "100€" : type === 'fastBunny' ? "110€" : "120€";
   };
 
-  // Check if a role is available (using real inventory tracking)
-  // IMPORTANT: Role limits apply to ALL ticket types combined (Early Bird, Normal Bird, Reduced Early Bird, Reduced Normal Bird).
-  // This function returns false when the role limit has been reached (remaining tickets = 0).
-  const isRoleAvailable = (role: string): boolean => {
-    // If availability hasn't been loaded yet, default to true
-    if (roleAvailability[role] === undefined) {
-      return true;
-    }
-    // Return false if role is sold out (limit reached)
-    return roleAvailability[role];
-  };
-  
   // Get remaining tickets for a role (early, fast bunny, normal)
   const getRemainingForRole = (role: string): { early: number | null; fastBunny: number | null; normal: number | null } | null => {
     return remainingTickets[role] ?? null;
   };
+
+  type TicketTypeKey = 'early' | 'fastBunny' | 'normal';
+
+  const isRoleAvailableForType = (role: string, ticketType: TicketTypeKey): boolean => {
+    const r = remainingTickets[role];
+    if (!r) return true;
+    // Normal Bird receives rollover from Early Bird and Fast Bunny, so a role available for
+    // any other ticket type should also be available for Normal Bird.
+    if (ticketType === 'normal') {
+      return (r.early ?? 0) > 0 || (r.fastBunny ?? 0) > 0 || (r.normal ?? 0) > 0;
+    }
+    const remaining = ticketType === 'early' ? r.early : r.fastBunny;
+    return (remaining ?? 0) > 0;
+  };
+
+  const hasAnyRoleAvailableForType = (roles: { value: string }[], ticketType: TicketTypeKey): boolean =>
+    roles.some((r) => isRoleAvailableForType(r.value, ticketType));
 
   const handleChooseTicket = (type: string, role: string) => {
     if (!role) {
@@ -309,10 +314,9 @@ const Tickets = () => {
     return !!(earlyBirdRole || fastBunnyRole || normalRole || earlyBirdReducedRole || fastBunnyReducedRole || normalReducedRole);
   };
 
-  // Check if a specific dropdown should be disabled
-  const isDisabled = (currentValue: string) => {
-    return hasAnySelection() && !currentValue;
-  };
+  // Check if a specific dropdown should be disabled (when another has selection, or when no roles available for this ticket type)
+  const isDisabled = (currentValue: string, ticketType: TicketTypeKey, roles: { value: string }[]) =>
+    (hasAnySelection() && !currentValue) || !hasAnyRoleAvailableForType(roles, ticketType);
 
   const handleRoleChange = (
     setter: (value: string) => void, 
@@ -539,22 +543,22 @@ const Tickets = () => {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1 relative">
-                      <Select 
+                      <Select
                         key={`earlyBird-${earlyBirdRole || 'empty'}`}
                         {...(earlyBirdRole ? { value: earlyBirdRole } : {})}
                         onValueChange={(value) => handleRoleChange(setEarlyBirdRole, value, clearAllExceptEarlyBird)}
-                        disabled={isDisabled(earlyBirdRole)}
+                        disabled={isDisabled(earlyBirdRole, 'early', standardRoles)}
                       >
-                        <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(earlyBirdRole)}>
+                        <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(earlyBirdRole, 'early', standardRoles)}>
                           <SelectValue placeholder={t("selectRole") || "Select a role..."} />
                         </SelectTrigger>
                         <SelectContent>
                           {standardRoles.map((role) => {
-                            const isAvailable = isRoleAvailable(role.value);
+                            const isAvailable = isRoleAvailableForType(role.value, 'early');
                             const remaining = getRemainingForRole(role.value);
                             return (
-                              <SelectItem 
-                                key={role.value} 
+                              <SelectItem
+                                key={role.value}
                                 value={role.value}
                                 disabled={!isAvailable}
                                 className={!isAvailable ? "text-muted-foreground opacity-50" : ""}
@@ -599,7 +603,7 @@ const Tickets = () => {
                     </div>
                     <Button
                       onClick={() => handleChooseTicket("earlyBird", earlyBirdRole)}
-                      disabled={!earlyBirdRole || !isRoleAvailable(earlyBirdRole)}
+                      disabled={!earlyBirdRole || !isRoleAvailableForType(earlyBirdRole, 'early')}
                       className="w-full sm:w-auto"
                     >
                       {t("chooseThisTicket")}
@@ -634,14 +638,14 @@ const Tickets = () => {
                         key={`fastBunny-${fastBunnyRole || 'empty'}`}
                         {...(fastBunnyRole ? { value: fastBunnyRole } : {})}
                         onValueChange={(value) => handleRoleChange(setFastBunnyRole, value, clearAllExceptFastBunny)}
-                        disabled={isDisabled(fastBunnyRole)}
+                        disabled={isDisabled(fastBunnyRole, 'fastBunny', standardRoles)}
                       >
-                        <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(fastBunnyRole)}>
+                        <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(fastBunnyRole, 'fastBunny', standardRoles)}>
                           <SelectValue placeholder={t("selectRole") || "Select a role..."} />
                         </SelectTrigger>
                         <SelectContent>
                           {standardRoles.map((role) => {
-                            const isAvailable = isRoleAvailable(role.value);
+                            const isAvailable = isRoleAvailableForType(role.value, 'fastBunny');
                             const remaining = getRemainingForRole(role.value);
                             return (
                               <SelectItem
@@ -690,7 +694,7 @@ const Tickets = () => {
                     </div>
                     <Button
                       onClick={() => handleChooseTicket("fastBunny", fastBunnyRole)}
-                      disabled={!fastBunnyRole || !isRoleAvailable(fastBunnyRole)}
+                      disabled={!fastBunnyRole || !isRoleAvailableForType(fastBunnyRole, 'fastBunny')}
                       className="w-full sm:w-auto"
                     >
                       {t("chooseThisTicket")}
@@ -725,14 +729,14 @@ const Tickets = () => {
                       key={`normal-${normalRole || 'empty'}`}
                       {...(normalRole ? { value: normalRole } : {})}
                       onValueChange={(value) => handleRoleChange(setNormalRole, value, clearAllExceptNormal)}
-                      disabled={isDisabled(normalRole)}
+                      disabled={isDisabled(normalRole, 'normal', standardRoles)}
                     >
-                      <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(normalRole)}>
+                      <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(normalRole, 'normal', standardRoles)}>
                         <SelectValue placeholder={t("selectRole") || "Select a role..."} />
                       </SelectTrigger>
                       <SelectContent>
                         {standardRoles.map((role) => {
-                          const isAvailable = isRoleAvailable(role.value);
+                          const isAvailable = isRoleAvailableForType(role.value, 'normal');
                           const remaining = getRemainingForRole(role.value);
                           return (
                             <SelectItem 
@@ -740,22 +744,22 @@ const Tickets = () => {
                               value={role.value}
                               disabled={!isAvailable}
                               className={!isAvailable ? "text-muted-foreground opacity-50" : ""}
-                              >
-                                {role.label} {(() => {
-                                  if (!isAvailable) {
-                                    return `(${t("soldOut")})`;
-                                  }
-                                  if (isAdmin && remaining !== null) {
-                                    const e = remaining.early ?? '∞';
-                                    const f = remaining.fastBunny ?? '∞';
-                                    const n = remaining.normal ?? '∞';
-                                    return ` (${e} ${t("earlyBird")} / ${f} ${t("fastBunny")} / ${n} ${t("normal")} ${t("remaining")})`;
-                                  }
-                                  return '';
-                                })()}
-                              </SelectItem>
-                            );
-                          })}
+                            >
+                              {role.label} {(() => {
+                                if (!isAvailable) {
+                                  return `(${t("soldOut")})`;
+                                }
+                                if (isAdmin && remaining !== null) {
+                                  const e = remaining.early ?? '∞';
+                                  const f = remaining.fastBunny ?? '∞';
+                                  const n = remaining.normal ?? '∞';
+                                  return ` (${e} ${t("earlyBird")} / ${f} ${t("fastBunny")} / ${n} ${t("normal")} ${t("remaining")})`;
+                                }
+                                return '';
+                              })()}
+                            </SelectItem>
+                          );
+                        })}
                           {normalRole && (
                           <SelectItem value="__clear__" className="text-muted-foreground">
                             {t("clearSelection")}
@@ -781,7 +785,7 @@ const Tickets = () => {
                   </div>
                   <Button
                     onClick={() => handleChooseTicket("normal", normalRole)}
-                    disabled={!normalRole || !isRoleAvailable(normalRole) || !isNormalAvailable()}
+                    disabled={!normalRole || !isRoleAvailableForType(normalRole, 'normal') || !isNormalAvailable()}
                     className="w-full sm:w-auto"
                   >
                     {t("chooseThisTicket")}
@@ -861,14 +865,14 @@ const Tickets = () => {
                         key={`earlyBirdReduced-${earlyBirdReducedRole || 'empty'}`}
                         {...(earlyBirdReducedRole ? { value: earlyBirdReducedRole } : {})}
                         onValueChange={(value) => handleRoleChange(setEarlyBirdReducedRole, value, clearAllExceptEarlyBirdReduced)}
-                        disabled={isDisabled(earlyBirdReducedRole)}
+                        disabled={isDisabled(earlyBirdReducedRole, 'early', reducedRoles)}
                       >
-                        <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(earlyBirdReducedRole)}>
+                        <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(earlyBirdReducedRole, 'early', reducedRoles)}>
                           <SelectValue placeholder={t("selectRole") || "Select a role..."} />
                         </SelectTrigger>
                         <SelectContent>
                           {reducedRoles.map((role) => {
-                            const isAvailable = isRoleAvailable(role.value);
+                            const isAvailable = isRoleAvailableForType(role.value, 'early');
                             const remaining = getRemainingForRole(role.value);
                             return (
                               <SelectItem 
@@ -917,7 +921,7 @@ const Tickets = () => {
                     </div>
                     <Button
                       onClick={() => handleChooseTicket("reducedEarlyBird", earlyBirdReducedRole)}
-                      disabled={!earlyBirdReducedRole || !isRoleAvailable(earlyBirdReducedRole)}
+                      disabled={!earlyBirdReducedRole || !isRoleAvailableForType(earlyBirdReducedRole, 'early')}
                       className="w-full sm:w-auto"
                     >
                       {t("chooseThisTicket")}
@@ -952,14 +956,14 @@ const Tickets = () => {
                         key={`fastBunnyReduced-${fastBunnyReducedRole || 'empty'}`}
                         {...(fastBunnyReducedRole ? { value: fastBunnyReducedRole } : {})}
                         onValueChange={(value) => handleRoleChange(setFastBunnyReducedRole, value, clearAllExceptFastBunnyReduced)}
-                        disabled={isDisabled(fastBunnyReducedRole)}
+                        disabled={isDisabled(fastBunnyReducedRole, 'fastBunny', reducedRoles)}
                       >
-                        <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(fastBunnyReducedRole)}>
+                        <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(fastBunnyReducedRole, 'fastBunny', reducedRoles)}>
                           <SelectValue placeholder={t("selectRole") || "Select a role..."} />
                         </SelectTrigger>
                         <SelectContent>
                           {reducedRoles.map((role) => {
-                            const isAvailable = isRoleAvailable(role.value);
+                            const isAvailable = isRoleAvailableForType(role.value, 'fastBunny');
                             const remaining = getRemainingForRole(role.value);
                             return (
                               <SelectItem
@@ -1008,7 +1012,7 @@ const Tickets = () => {
                     </div>
                     <Button
                       onClick={() => handleChooseTicket("reducedFastBunny", fastBunnyReducedRole)}
-                      disabled={!fastBunnyReducedRole || !isRoleAvailable(fastBunnyReducedRole)}
+                      disabled={!fastBunnyReducedRole || !isRoleAvailableForType(fastBunnyReducedRole, 'fastBunny')}
                       className="w-full sm:w-auto"
                     >
                       {t("chooseThisTicket")}
@@ -1043,14 +1047,14 @@ const Tickets = () => {
                       key={`normalReduced-${normalReducedRole || 'empty'}`}
                       {...(normalReducedRole ? { value: normalReducedRole } : {})}
                       onValueChange={(value) => handleRoleChange(setNormalReducedRole, value, clearAllExceptNormalReduced)}
-                      disabled={isDisabled(normalReducedRole)}
+                      disabled={isDisabled(normalReducedRole, 'normal', reducedRoles)}
                     >
-                      <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(normalReducedRole)}>
+                      <SelectTrigger className="flex-1 pr-8" disabled={isDisabled(normalReducedRole, 'normal', reducedRoles)}>
                         <SelectValue placeholder={t("selectRole") || "Select a role..."} />
                       </SelectTrigger>
                       <SelectContent>
                         {reducedRoles.map((role) => {
-                          const isAvailable = isRoleAvailable(role.value);
+                          const isAvailable = isRoleAvailableForType(role.value, 'normal');
                           const remaining = getRemainingForRole(role.value);
                           return (
                             <SelectItem 
@@ -1099,7 +1103,7 @@ const Tickets = () => {
                   </div>
                   <Button
                     onClick={() => handleChooseTicket("reducedNormal", normalReducedRole)}
-                    disabled={!normalReducedRole || !isRoleAvailable(normalReducedRole) || !isNormalAvailable()}
+                    disabled={!normalReducedRole || !isRoleAvailableForType(normalReducedRole, 'normal') || !isNormalAvailable()}
                     className="w-full sm:w-auto"
                   >
                     {t("chooseThisTicket")}
