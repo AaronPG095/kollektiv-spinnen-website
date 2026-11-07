@@ -1,48 +1,49 @@
-# Kollektiv Spinnen Website
+# Kollektiv Spinnen
 
-A modern, responsive festival timetable and **Soli-Beitrag ticketing** application built with React and TypeScript. It provides interactive timetables, role-based volunteer tickets, multi-language content, and a hardened Supabase backend.
+Festival web application with an interactive timetable, multilingual content, administration and contribution-based ticketing. Built with React, TypeScript and Supabase.
+
+**[View the application](https://kollektiv-spinnen-festival.vercel.app/)**
+
+The project brings together public event information and operational workflows for a small independent festival.
 
 ## Features
-
-- 📅 **Interactive Timetable**: View events in chronological list or grid format
-- 🔍 **Advanced Filtering**: Filter by day, venue, event type, and search query
-- 🌍 **Multi-language Support**: English and German language support
-- 📱 **Responsive Design**: Optimized for desktop, tablet, and mobile devices
-- 🔐 **Authentication & Admin**: Admin-only area for managing events, FAQs, about-page content, and ticket settings
-- 🎫 **Soli-Beitrag Ticketing**:
+  - **Interactive Timetable**: View events in chronological list or grid format
+- **Advanced Filtering**: Filter by day, venue, event type, and search query
+- **Multi-language Support**: English and German language support
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Authentication & Admin**: Admin-only area for managing events, FAQs, about-page content, and ticket settings
+- **Soli-Beitrag Ticketing**:
   - Role-based tickets (bar, kitchen, awareness, tech, auf-/abbau, etc.)
   - Early-bird and normal pricing with configurable limits and cut-off dates
   - Real-time inventory tracking per role and per ticket type
   - PayPal-based payment flow with generated reference codes and QR support
-- 🙌 **Accessibility & UX**:
+- **Accessibility & UX**:
   - Clear validation errors and consent checkboxes for data storage
   - Helpful status messages and toasts for all critical flows
-- 🎨 **Modern UI**: Built with shadcn/ui components, Radix primitives, Tailwind CSS, and lucide icons
-- ⚡ **Real-time Backend**: Powered by Supabase for PostgreSQL, Row Level Security, and real-time data synchronization
+- **Modern UI**: Built with shadcn/ui components, Radix primitives, Tailwind CSS, and lucide icons
+- **Real-time Backend**: Powered by Supabase for PostgreSQL, Row Level Security, and real-time data synchronization
 
 ## Security, Reliability & Performance
-
-- ✅ **No Hardcoded Secrets**: Supabase URL and anon key are now **only** read from environment variables
-- ✅ **Centralized Validation**:
+  - **No Hardcoded Secrets**: Supabase URL and anon key are now **only** read from environment variables
+- **Centralized Validation**:
   - Name and email validation/sanitization for ticket checkout
   - Generic string and URL validation helpers
   - XSS-resistant string handling where user input is stored
-- ✅ **Centralized Error Handling**:
+- **Centralized Error Handling**:
   - Shared error formatter for user-friendly messages
   - Safe logging that avoids leaking internal details in production
-- ✅ **Improved Admin Auth Flow**: Fixed race conditions in the admin check for more reliable access control
-- ✅ **RLS & Database Hardening**:
+- **Improved Admin Auth Flow**: Fixed race conditions in the admin check for more reliable access control
+- **RLS & Database Hardening**:
   - All core tables (events, faqs, ticket_settings, ticket_purchases, about_page_*) verified and accessible
   - Migration scripts included to fix and audit Supabase RLS policies
-- 🚀 **Performance Improvements**:
+- **Performance Improvements**:
   - In-memory caching for frequently-read data (e.g. ticket settings)
   - Debounced admin search to avoid unnecessary renders and queries
   - Parallel loading of admin data to speed up initial load
   - React error boundary to catch rendering errors and keep the app usable
 
 ## Tech Stack
-
-- **Frontend**: React 18 with TypeScript
+  - **Frontend**: React 18 with TypeScript
 - **Build Tool**: Vite
 - **Routing**: React Router DOM
 - **UI Components**: shadcn/ui on top of Radix UI primitives, lucide-react icons
@@ -62,7 +63,7 @@ A modern, responsive festival timetable and **Soli-Beitrag ticketing** applicati
 
 1. **Clone the repository**
    ```sh
-   git clone <YOUR_GIT_URL>
+   git clone https://github.com/AaronPG095/kollektiv-spinnen-website.git
    cd kollektiv-spinnen-website
    ```
 
@@ -216,7 +217,7 @@ git push origin main
 
 ## License
 
-This project is private and proprietary.
+No open-source license is declared in this repository. Public visibility does not grant permission to reuse, modify or redistribute its code.
 
 ## Support
 
