@@ -54,9 +54,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           return;
         }
 
-        // Check super admin status first (email-based check)
-        const normalizedEmail = userEmail.trim().toLowerCase();
-        const isSuperAdminEmail = normalizedEmail === 'aaron.p.greyling@gmail.com';
+        // Check user_roles table for both admin and super_admin roles
         
         // Check user_roles table for both admin and super_admin roles
         try {
@@ -82,7 +80,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const hasAdminRole = !!roleAdmin && !roleError;
             
             // Super admin if they have super_admin role OR if email matches (for robustness)
-            const isSuperAdminUser = hasSuperAdminRole || (isSuperAdminEmail && hasAdminRole);
+            const isSuperAdminUser = hasSuperAdminRole;
             
             if (mounted) {
               setIsSuperAdmin(isSuperAdminUser);
